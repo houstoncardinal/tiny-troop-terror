@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { WEAPONS, type WeaponDef } from './weapons';
+import { playSound } from './AudioManager';
 
 export type MapType = 'desert' | 'arctic' | 'jungle';
 
