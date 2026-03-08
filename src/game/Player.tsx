@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from './useGameStore';
+import { WEAPONS, WEAPON_ORDER } from './weapons';
 
 const SPEED = 12;
 const SPRINT_SPEED = 18;
@@ -18,12 +19,14 @@ export default function Player() {
   const controlsRef = useRef<any>(null);
   const velocity = useRef(new THREE.Vector3());
   const keys = useRef<Record<string, boolean>>({});
-  const { shoot, gameState, reload, setLocked, setCrouching, isCrouching } = useGameStore();
+  const { shoot, gameState, reload, setLocked, setCrouching, isCrouching,
+    switchWeapon, ownedWeapons, currentWeaponId, toggleShop, isReloading, updateCombo } = useGameStore();
   const lastShot = useRef(0);
   const verticalVelocity = useRef(0);
   const isGrounded = useRef(true);
   const currentHeight = useRef(STAND_HEIGHT);
   const headBob = useRef(0);
+  const mouseDown = useRef(false);
 
   useEffect(() => {
     camera.position.set(0, STAND_HEIGHT, 30);
@@ -35,47 +38,73 @@ export default function Player() {
         verticalVelocity.current = JUMP_FORCE;
         isGrounded.current = false;
       }
-      if (e.code === 'KeyC' || e.code === 'ControlLeft') {
-        setCrouching(true);
+      if (e.code === 'KeyC' || e.code === 'ControlLeft') setCrouching(true);
+      if (e.code === 'KeyB') toggleShop();
+
+      // Number keys to switch weapons
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= 9) {
+        const ownedIds = ownedWeapons.map(w => w.id);
+        const ordered = WEAPON_ORDER.filter(id => ownedIds.includes(id));
+        if (ordered[num - 1]) switchWeapon(ordered[num - 1]);
+      }
+      // Q to cycle weapons
+      if (e.code === 'KeyQ') {
+        const ownedIds = ownedWeapons.map(w => w.id);
+        const ordered = WEAPON_ORDER.filter(id => ownedIds.includes(id));
+        const idx = ordered.indexOf(currentWeaponId);
+        const next = ordered[(idx + 1) % ordered.length];
+        if (next) switchWeapon(next);
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
       keys.current[e.code] = false;
-      if (e.code === 'KeyC' || e.code === 'ControlLeft') {
-        setCrouching(false);
-      }
+      if (e.code === 'KeyC' || e.code === 'ControlLeft') setCrouching(false);
     };
+    const onMouseDown = () => { mouseDown.current = true; };
+    const onMouseUp = () => { mouseDown.current = false; };
 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
     };
-  }, [camera, reload, setCrouching]);
+  }, [camera, reload, setCrouching, switchWeapon, ownedWeapons, currentWeaponId, toggleShop]);
 
-  const handleClick = useCallback(() => {
-    if (gameState !== 'playing') return;
+  const fireWeapon = useCallback(() => {
+    if (gameState !== 'playing' || isReloading) return;
+    const weapon = WEAPONS[currentWeaponId];
     const now = Date.now();
-    if (now - lastShot.current < 100) return;
+    if (now - lastShot.current < weapon.fireRate) return;
     lastShot.current = now;
 
     const dir = new THREE.Vector3();
     camera.getWorldDirection(dir);
     const pos = camera.position.clone();
-    shoot(
-      [pos.x, pos.y, pos.z],
-      [dir.x, dir.y, dir.z]
-    );
-  }, [camera, shoot, gameState]);
+    shoot([pos.x, pos.y, pos.z], [dir.x, dir.y, dir.z]);
+  }, [camera, shoot, gameState, currentWeaponId, isReloading]);
 
   useEffect(() => {
-    window.addEventListener('click', handleClick);
-    return () => window.removeEventListener('click', handleClick);
-  }, [handleClick]);
+    const onClick = () => fireWeapon();
+    window.addEventListener('click', onClick);
+    return () => window.removeEventListener('click', onClick);
+  }, [fireWeapon]);
 
   useFrame((_, delta) => {
     if (gameState !== 'playing') return;
+
+    updateCombo(delta);
+
+    // Auto-fire for automatic weapons
+    const weapon = WEAPONS[currentWeaponId];
+    if (weapon.auto && mouseDown.current) {
+      fireWeapon();
+    }
 
     const k = keys.current;
     const sprint = k['ShiftLeft'] ? SPRINT_SPEED : isCrouching ? CROUCH_SPEED : SPEED;
@@ -102,7 +131,6 @@ export default function Player() {
       velocity.current.lerp(new THREE.Vector3(), 0.2);
     }
 
-    // Gravity & jumping
     verticalVelocity.current += GRAVITY * delta;
     const targetHeight = isCrouching ? CROUCH_HEIGHT : STAND_HEIGHT;
     currentHeight.current += (targetHeight - currentHeight.current) * 0.15;
@@ -110,20 +138,17 @@ export default function Player() {
     const newPos = camera.position.clone().add(velocity.current.clone().multiplyScalar(delta));
     newPos.y += verticalVelocity.current * delta;
 
-    // Ground collision
     if (newPos.y <= GROUND_Y + currentHeight.current) {
       newPos.y = GROUND_Y + currentHeight.current;
       verticalVelocity.current = 0;
       isGrounded.current = true;
     }
 
-    // Head bob when moving on ground
     if (isMoving && isGrounded.current) {
       headBob.current += delta * (k['ShiftLeft'] ? 14 : 10);
       newPos.y += Math.sin(headBob.current) * 0.04;
     }
 
-    // Clamp to map bounds
     newPos.x = Math.max(-48, Math.min(48, newPos.x));
     newPos.z = Math.max(-48, Math.min(48, newPos.z));
     camera.position.copy(newPos);
