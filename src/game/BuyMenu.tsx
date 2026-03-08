@@ -72,7 +72,7 @@ export default function BuyMenu() {
                         </button>
                       ) : (
                         <button
-                          onClick={() => buyWeapon(id)}
+                          onClick={() => { if (buyWeapon(id)) playSound('buy'); }}
                           disabled={money < w.price || w.price === 0}
                           className="px-2 py-1 bg-primary text-primary-foreground text-xs font-tactical cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         >
