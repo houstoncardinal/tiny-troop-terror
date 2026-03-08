@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import DesertMap from './DesertMap';
 import ArcticMap from './ArcticMap';
@@ -68,5 +69,3 @@ export default function GameScene() {
     </div>
   );
 }
-
-import * as THREE from 'three';
