@@ -1,13 +1,21 @@
-import { useGameStore } from './useGameStore';
+import { useGameStore, type MapType } from './useGameStore';
+import { useState } from 'react';
+
+const maps: { id: MapType; name: string; desc: string; color: string }[] = [
+  { id: 'desert', name: 'DUST STORM', desc: 'Scorching desert compound', color: '#d4a853' },
+  { id: 'arctic', name: 'FROST BITE', desc: 'Frozen military outpost', color: '#7ab8d4' },
+  { id: 'jungle', name: 'VIPER RIDGE', desc: 'Ancient jungle temple ruins', color: '#3a8a4a' },
+];
 
 export default function MenuScreen() {
   const { gameState, startGame, score, kills, wave } = useGameStore();
+  const [selectedMap, setSelectedMap] = useState<MapType>('desert');
 
   if (gameState === 'playing') return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm">
-      <div className="text-center space-y-8">
+      <div className="text-center space-y-6 max-w-lg mx-auto px-4">
         <h1 className="font-military text-3xl md:text-5xl text-primary tracking-wider">
           DUST STORM
         </h1>
@@ -26,8 +34,33 @@ export default function MenuScreen() {
           </div>
         )}
 
+        {/* Map selector */}
+        <div className="space-y-2">
+          <p className="text-muted-foreground text-xs tracking-widest uppercase">SELECT MAP</p>
+          <div className="flex gap-2 justify-center">
+            {maps.map(m => (
+              <button
+                key={m.id}
+                onClick={() => setSelectedMap(m.id)}
+                className={`px-4 py-3 border-2 transition-all cursor-pointer ${
+                  selectedMap === m.id
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border hover:border-muted-foreground'
+                }`}
+              >
+                <div
+                  className="w-3 h-3 rounded-full mx-auto mb-1"
+                  style={{ backgroundColor: m.color }}
+                />
+                <div className="text-foreground text-xs font-bold font-tactical">{m.name}</div>
+                <div className="text-muted-foreground text-[10px]">{m.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <button
-          onClick={startGame}
+          onClick={() => startGame(selectedMap)}
           className="px-12 py-4 bg-primary text-primary-foreground font-tactical text-xl font-bold tracking-widest uppercase hover:opacity-90 transition-opacity cursor-pointer"
         >
           {gameState === 'dead' ? 'PLAY AGAIN' : 'START GAME'}
@@ -35,7 +68,7 @@ export default function MenuScreen() {
 
         <div className="text-muted-foreground text-sm font-tactical space-y-1">
           <p>WASD to move • MOUSE to aim • CLICK to shoot</p>
-          <p>SHIFT to sprint • R to reload</p>
+          <p>SPACE to jump • C to crouch • SHIFT to sprint • R to reload</p>
           <p className="text-xs mt-4 opacity-60">Click to lock mouse • ESC to unlock</p>
         </div>
       </div>
