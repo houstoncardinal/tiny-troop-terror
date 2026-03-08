@@ -1,5 +1,6 @@
 import { useGameStore } from './useGameStore';
 import { WEAPONS, WEAPON_ORDER } from './weapons';
+import { playSound } from './AudioManager';
 
 export default function BuyMenu() {
   const { shopOpen, money, ownedWeapons, buyWeapon, buyAmmo, buyArmor, armor, toggleShop, gameState } = useGameStore();
