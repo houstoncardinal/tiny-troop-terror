@@ -1,9 +1,11 @@
 import { useGameStore } from './useGameStore';
 
 export default function HUD() {
-  const { health, ammo, maxAmmo, score, wave, kills, gameState } = useGameStore();
+  const { health, ammo, maxAmmo, score, wave, kills, gameState, isCrouching, currentMap } = useGameStore();
 
   if (gameState !== 'playing') return null;
+
+  const mapNames = { desert: 'DUST STORM', arctic: 'FROST BITE', jungle: 'VIPER RIDGE' };
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50 font-tactical">
@@ -33,6 +35,9 @@ export default function HUD() {
           </div>
           <span className="text-foreground text-sm font-bold">{health}</span>
         </div>
+        {isCrouching && (
+          <div className="text-muted-foreground text-xs mt-1 tracking-widest">⬇ CROUCHING</div>
+        )}
       </div>
 
       {/* Ammo */}
@@ -52,6 +57,7 @@ export default function HUD() {
         <div className="text-muted-foreground text-xs tracking-widest uppercase">SCORE</div>
       </div>
       <div className="absolute top-6 left-6">
+        <div className="text-muted-foreground text-[10px] tracking-widest">{mapNames[currentMap]}</div>
         <div className="text-foreground text-lg font-bold">WAVE {wave}</div>
         <div className="text-muted-foreground text-xs">{kills} kills</div>
       </div>

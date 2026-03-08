@@ -1,11 +1,14 @@
 import { create } from 'zustand';
 
+export type MapType = 'desert' | 'arctic' | 'jungle';
+
 export interface Enemy {
   id: string;
   position: [number, number, number];
   health: number;
   speed: number;
   alive: boolean;
+  type: 'grunt' | 'runner' | 'tank';
 }
 
 export interface Bullet {
@@ -26,8 +29,13 @@ interface GameState {
   gameState: 'menu' | 'playing' | 'paused' | 'dead';
   kills: number;
   isLocked: boolean;
+  currentMap: MapType;
+  isCrouching: boolean;
+  isJumping: boolean;
+  playerY: number;
+  velocityY: number;
 
-  startGame: () => void;
+  startGame: (map?: MapType) => void;
   takeDamage: (amount: number) => void;
   shoot: (position: [number, number, number], direction: [number, number, number]) => void;
   reload: () => void;
@@ -39,6 +47,11 @@ interface GameState {
   setLocked: (locked: boolean) => void;
   die: () => void;
   nextWave: () => void;
+  setCrouching: (c: boolean) => void;
+  setJumping: (j: boolean) => void;
+  setPlayerY: (y: number) => void;
+  setVelocityY: (v: number) => void;
+  setMap: (map: MapType) => void;
 }
 
 let bulletId = 0;
@@ -54,10 +67,16 @@ export const useGameStore = create<GameState>((set, get) => ({
   gameState: 'menu',
   kills: 0,
   isLocked: false,
+  currentMap: 'desert',
+  isCrouching: false,
+  isJumping: false,
+  playerY: 1.7,
+  velocityY: 0,
 
-  startGame: () => set({
+  startGame: (map) => set({
     health: 100, score: 0, ammo: 30, wave: 1, enemies: [], bullets: [],
-    gameState: 'playing', kills: 0
+    gameState: 'playing', kills: 0, currentMap: map || get().currentMap,
+    isCrouching: false, isJumping: false, playerY: 1.7, velocityY: 0,
   }),
 
   takeDamage: (amount) => {
@@ -78,11 +97,15 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   reload: () => set({ ammo: get().maxAmmo }),
 
-  killEnemy: (id) => set(s => ({
-    enemies: s.enemies.map(e => e.id === id ? { ...e, alive: false } : e),
-    score: s.score + 100,
-    kills: s.kills + 1,
-  })),
+  killEnemy: (id) => {
+    const enemy = get().enemies.find(e => e.id === id);
+    const bonus = enemy?.type === 'tank' ? 300 : enemy?.type === 'runner' ? 150 : 100;
+    set(s => ({
+      enemies: s.enemies.map(e => e.id === id ? { ...e, alive: false } : e),
+      score: s.score + bonus,
+      kills: s.kills + 1,
+    }));
+  },
 
   spawnEnemies: (enemies) => set(s => ({ enemies: [...s.enemies, ...enemies] })),
 
@@ -114,4 +137,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     ammo: s.maxAmmo,
     enemies: [],
   })),
+  setCrouching: (c) => set({ isCrouching: c }),
+  setJumping: (j) => set({ isJumping: j }),
+  setPlayerY: (y) => set({ playerY: y }),
+  setVelocityY: (v) => set({ velocityY: v }),
+  setMap: (map) => set({ currentMap: map }),
 }));
