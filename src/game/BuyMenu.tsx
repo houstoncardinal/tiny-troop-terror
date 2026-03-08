@@ -64,7 +64,7 @@ export default function BuyMenu() {
                     <div className="flex gap-2">
                       {owned ? (
                         <button
-                          onClick={() => buyAmmo(id)}
+                          onClick={() => { if (buyAmmo(id)) playSound('buy'); }}
                           disabled={money < w.ammoPrice || owned.reserveAmmo >= w.maxAmmo}
                           className="px-2 py-1 bg-secondary text-foreground text-xs font-tactical cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         >
