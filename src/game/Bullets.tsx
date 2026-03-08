@@ -2,23 +2,24 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from './useGameStore';
+import { playSound } from './AudioManager';
 
 const MAX_DIST = 100;
 const HIT_RADIUS = 0.8;
 const GRENADE_RADIUS = 6;
 
 export default function Bullets() {
-  const { bullets, removeBullet, enemies, damageEnemy } = useGameStore();
   const meshRefs = useRef<Record<string, THREE.Mesh>>({});
   const grenadeVelocities = useRef<Record<string, THREE.Vector3>>({});
 
   useFrame((_, delta) => {
+    const { bullets, removeBullet, enemies, damageEnemy } = useGameStore.getState();
+
     bullets.forEach(bullet => {
       const mesh = meshRefs.current[bullet.id];
       if (!mesh) return;
 
       if (bullet.isGrenade) {
-        // Grenade physics - arc trajectory
         if (!grenadeVelocities.current[bullet.id]) {
           grenadeVelocities.current[bullet.id] = new THREE.Vector3(
             bullet.direction[0] * bullet.speed,
@@ -27,14 +28,13 @@ export default function Bullets() {
           );
         }
         const vel = grenadeVelocities.current[bullet.id];
-        vel.y -= 20 * delta; // gravity
+        vel.y -= 20 * delta;
         mesh.position.add(vel.clone().multiplyScalar(delta));
         mesh.rotation.x += delta * 5;
         mesh.rotation.z += delta * 3;
 
-        // Explode on ground or after 2.5s
         if (mesh.position.y <= 0.1 || Date.now() - bullet.createdAt > 2500) {
-          // Damage all enemies in radius
+          playSound('explosion');
           for (const enemy of enemies) {
             if (!enemy.alive) continue;
             const ePos = new THREE.Vector3(...enemy.position);
@@ -52,7 +52,6 @@ export default function Bullets() {
           return;
         }
       } else {
-        // Regular bullet
         const dir = new THREE.Vector3(...bullet.direction);
         mesh.position.add(dir.multiplyScalar(bullet.speed * delta));
 
@@ -75,6 +74,8 @@ export default function Bullets() {
       }
     });
   });
+
+  const bullets = useGameStore(s => s.bullets);
 
   return (
     <>
