@@ -4,6 +4,7 @@ import { PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from './useGameStore';
 import { WEAPONS, WEAPON_ORDER } from './weapons';
+import { playSound } from './AudioManager';
 
 const SPEED = 12;
 const SPRINT_SPEED = 18;
@@ -19,47 +20,75 @@ export default function Player() {
   const controlsRef = useRef<any>(null);
   const velocity = useRef(new THREE.Vector3());
   const keys = useRef<Record<string, boolean>>({});
-  const { shoot, gameState, reload, setLocked, setCrouching, isCrouching,
-    switchWeapon, ownedWeapons, currentWeaponId, toggleShop, isReloading, updateCombo } = useGameStore();
   const lastShot = useRef(0);
   const verticalVelocity = useRef(0);
   const isGrounded = useRef(true);
   const currentHeight = useRef(STAND_HEIGHT);
   const headBob = useRef(0);
   const mouseDown = useRef(false);
+  const initialized = useRef(false);
+  const footstepTimer = useRef(0);
+
+  // Initialize camera position only once
+  useEffect(() => {
+    if (!initialized.current) {
+      camera.position.set(0, STAND_HEIGHT, 30);
+      initialized.current = true;
+    }
+  }, [camera]);
+
+  // Stable refs for store values used in key handlers
+  const storeRef = useRef(useGameStore.getState());
+  useEffect(() => {
+    const unsub = useGameStore.subscribe(state => { storeRef.current = state; });
+    return unsub;
+  }, []);
 
   useEffect(() => {
-    camera.position.set(0, STAND_HEIGHT, 30);
-
     const onKeyDown = (e: KeyboardEvent) => {
       keys.current[e.code] = true;
-      if (e.code === 'KeyR') reload();
+      const s = storeRef.current;
+
+      if (e.code === 'KeyR') {
+        s.reload();
+        playSound('reload');
+      }
       if (e.code === 'Space' && isGrounded.current) {
         verticalVelocity.current = JUMP_FORCE;
         isGrounded.current = false;
+        playSound('jump');
       }
-      if (e.code === 'KeyC' || e.code === 'ControlLeft') setCrouching(true);
-      if (e.code === 'KeyB') toggleShop();
+      if (e.code === 'KeyC' || e.code === 'ControlLeft') s.setCrouching(true);
+      if (e.code === 'KeyB') {
+        s.toggleShop();
+        playSound('ui_click');
+      }
 
       // Number keys to switch weapons
       const num = parseInt(e.key);
       if (num >= 1 && num <= 9) {
-        const ownedIds = ownedWeapons.map(w => w.id);
+        const ownedIds = s.ownedWeapons.map(w => w.id);
         const ordered = WEAPON_ORDER.filter(id => ownedIds.includes(id));
-        if (ordered[num - 1]) switchWeapon(ordered[num - 1]);
+        if (ordered[num - 1]) {
+          s.switchWeapon(ordered[num - 1]);
+          playSound('weapon_switch');
+        }
       }
       // Q to cycle weapons
       if (e.code === 'KeyQ') {
-        const ownedIds = ownedWeapons.map(w => w.id);
+        const ownedIds = s.ownedWeapons.map(w => w.id);
         const ordered = WEAPON_ORDER.filter(id => ownedIds.includes(id));
-        const idx = ordered.indexOf(currentWeaponId);
+        const idx = ordered.indexOf(s.currentWeaponId);
         const next = ordered[(idx + 1) % ordered.length];
-        if (next) switchWeapon(next);
+        if (next) {
+          s.switchWeapon(next);
+          playSound('weapon_switch');
+        }
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
       keys.current[e.code] = false;
-      if (e.code === 'KeyC' || e.code === 'ControlLeft') setCrouching(false);
+      if (e.code === 'KeyC' || e.code === 'ControlLeft') storeRef.current.setCrouching(false);
     };
     const onMouseDown = () => { mouseDown.current = true; };
     const onMouseUp = () => { mouseDown.current = false; };
@@ -74,20 +103,34 @@ export default function Player() {
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
     };
-  }, [camera, reload, setCrouching, switchWeapon, ownedWeapons, currentWeaponId, toggleShop]);
+  }, []);
 
   const fireWeapon = useCallback(() => {
-    if (gameState !== 'playing' || isReloading) return;
-    const weapon = WEAPONS[currentWeaponId];
+    const s = useGameStore.getState();
+    if (s.gameState !== 'playing' || s.isReloading) return;
+    const weapon = WEAPONS[s.currentWeaponId];
     const now = Date.now();
     if (now - lastShot.current < weapon.fireRate) return;
     lastShot.current = now;
 
+    const owned = s.ownedWeapons.find(w => w.id === s.currentWeaponId);
+    if (!owned || owned.currentAmmo <= 0) {
+      playSound('empty');
+      return;
+    }
+
     const dir = new THREE.Vector3();
     camera.getWorldDirection(dir);
     const pos = camera.position.clone();
-    shoot([pos.x, pos.y, pos.z], [dir.x, dir.y, dir.z]);
-  }, [camera, shoot, gameState, currentWeaponId, isReloading]);
+    s.shoot([pos.x, pos.y, pos.z], [dir.x, dir.y, dir.z]);
+
+    // Play weapon-specific sound
+    if (weapon.type === 'grenade') playSound('grenade_throw');
+    else if (weapon.type === 'shotgun') playSound('shotgun');
+    else if (weapon.type === 'sniper') playSound('sniper');
+    else if (weapon.type === 'rifle') playSound('rifle');
+    else playSound('pistol');
+  }, [camera]);
 
   useEffect(() => {
     const onClick = () => fireWeapon();
@@ -96,18 +139,19 @@ export default function Player() {
   }, [fireWeapon]);
 
   useFrame((_, delta) => {
-    if (gameState !== 'playing') return;
+    const s = useGameStore.getState();
+    if (s.gameState !== 'playing') return;
 
-    updateCombo(delta);
+    s.updateCombo(delta);
 
     // Auto-fire for automatic weapons
-    const weapon = WEAPONS[currentWeaponId];
+    const weapon = WEAPONS[s.currentWeaponId];
     if (weapon.auto && mouseDown.current) {
       fireWeapon();
     }
 
     const k = keys.current;
-    const sprint = k['ShiftLeft'] ? SPRINT_SPEED : isCrouching ? CROUCH_SPEED : SPEED;
+    const sprint = k['ShiftLeft'] ? SPRINT_SPEED : s.isCrouching ? CROUCH_SPEED : SPEED;
     const direction = new THREE.Vector3();
 
     const forward = new THREE.Vector3();
@@ -131,14 +175,26 @@ export default function Player() {
       velocity.current.lerp(new THREE.Vector3(), 0.2);
     }
 
+    // Footstep sounds
+    if (isMoving && isGrounded.current) {
+      footstepTimer.current += delta * (k['ShiftLeft'] ? 1.8 : 1);
+      if (footstepTimer.current > 0.4) {
+        footstepTimer.current = 0;
+        playSound('footstep');
+      }
+    }
+
     verticalVelocity.current += GRAVITY * delta;
-    const targetHeight = isCrouching ? CROUCH_HEIGHT : STAND_HEIGHT;
+    const targetHeight = s.isCrouching ? CROUCH_HEIGHT : STAND_HEIGHT;
     currentHeight.current += (targetHeight - currentHeight.current) * 0.15;
 
     const newPos = camera.position.clone().add(velocity.current.clone().multiplyScalar(delta));
     newPos.y += verticalVelocity.current * delta;
 
     if (newPos.y <= GROUND_Y + currentHeight.current) {
+      if (!isGrounded.current && verticalVelocity.current < -3) {
+        playSound('land');
+      }
       newPos.y = GROUND_Y + currentHeight.current;
       verticalVelocity.current = 0;
       isGrounded.current = true;
@@ -157,8 +213,8 @@ export default function Player() {
   return (
     <PointerLockControls
       ref={controlsRef}
-      onLock={() => setLocked(true)}
-      onUnlock={() => setLocked(false)}
+      onLock={() => useGameStore.getState().setLocked(true)}
+      onUnlock={() => useGameStore.getState().setLocked(false)}
     />
   );
 }

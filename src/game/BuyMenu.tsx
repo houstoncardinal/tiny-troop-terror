@@ -1,5 +1,6 @@
 import { useGameStore } from './useGameStore';
 import { WEAPONS, WEAPON_ORDER } from './weapons';
+import { playSound } from './AudioManager';
 
 export default function BuyMenu() {
   const { shopOpen, money, ownedWeapons, buyWeapon, buyAmmo, buyArmor, armor, toggleShop, gameState } = useGameStore();
@@ -34,7 +35,7 @@ export default function BuyMenu() {
               <span className="text-muted-foreground text-xs ml-2">({armor}/100)</span>
             </div>
             <button
-              onClick={() => buyArmor()}
+              onClick={() => { if (buyArmor()) playSound('buy'); }}
               disabled={money < 650 || armor >= 100}
               className="px-3 py-1 bg-primary text-primary-foreground text-xs font-tactical cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
             >
@@ -63,7 +64,7 @@ export default function BuyMenu() {
                     <div className="flex gap-2">
                       {owned ? (
                         <button
-                          onClick={() => buyAmmo(id)}
+                          onClick={() => { if (buyAmmo(id)) playSound('buy'); }}
                           disabled={money < w.ammoPrice || owned.reserveAmmo >= w.maxAmmo}
                           className="px-2 py-1 bg-secondary text-foreground text-xs font-tactical cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         >
@@ -71,7 +72,7 @@ export default function BuyMenu() {
                         </button>
                       ) : (
                         <button
-                          onClick={() => buyWeapon(id)}
+                          onClick={() => { if (buyWeapon(id)) playSound('buy'); }}
                           disabled={money < w.price || w.price === 0}
                           className="px-2 py-1 bg-primary text-primary-foreground text-xs font-tactical cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         >

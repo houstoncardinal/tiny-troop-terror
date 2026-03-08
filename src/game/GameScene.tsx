@@ -11,7 +11,7 @@ import WaveManager from './WaveManager';
 import HUD from './HUD';
 import MenuScreen from './MenuScreen';
 import BuyMenu from './BuyMenu';
-import { MuzzleFlash, HitParticles, ShellCasings } from './Effects';
+import { MuzzleFlash, HitParticles, ShellCasings, BulletTrails, ImpactDecals } from './Effects';
 import { useGameStore } from './useGameStore';
 
 function MapRenderer() {
@@ -24,7 +24,8 @@ function MapRenderer() {
 }
 
 function GameObjects() {
-  const { enemies, gameState } = useGameStore();
+  const enemies = useGameStore(s => s.enemies);
+  const gameState = useGameStore(s => s.gameState);
   const isActive = gameState === 'playing' || gameState === 'shopping';
 
   return (
@@ -36,8 +37,10 @@ function GameObjects() {
           <GunModel />
           <Bullets />
           <MuzzleFlash />
+          <BulletTrails />
           <HitParticles />
           <ShellCasings />
+          <ImpactDecals />
           {enemies.map(e => (
             <EnemyMinion key={e.id} enemy={e} />
           ))}
@@ -49,7 +52,7 @@ function GameObjects() {
 }
 
 export default function GameScene() {
-  const { currentMap } = useGameStore();
+  const currentMap = useGameStore(s => s.currentMap);
   return (
     <div className="w-screen h-screen bg-background">
       <MenuScreen />
