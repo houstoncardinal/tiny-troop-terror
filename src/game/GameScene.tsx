@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import DesertMap from './DesertMap';
 import ArcticMap from './ArcticMap';
@@ -10,6 +11,7 @@ import WaveManager from './WaveManager';
 import HUD from './HUD';
 import MenuScreen from './MenuScreen';
 import BuyMenu from './BuyMenu';
+import { MuzzleFlash, HitParticles, ShellCasings } from './Effects';
 import { useGameStore } from './useGameStore';
 
 function MapRenderer() {
@@ -33,6 +35,9 @@ function GameObjects() {
           <Player />
           <GunModel />
           <Bullets />
+          <MuzzleFlash />
+          <HitParticles />
+          <ShellCasings />
           {enemies.map(e => (
             <EnemyMinion key={e.id} enemy={e} />
           ))}
@@ -53,11 +58,12 @@ export default function GameScene() {
       <Canvas
         shadows
         camera={{ fov: 75, near: 0.1, far: 200 }}
-        gl={{ antialias: true }}
+        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+        dpr={[1, 2]}
       >
         {currentMap === 'arctic' && <fog attach="fog" args={['#c8d0d8', 30, 80]} />}
-        {currentMap === 'jungle' && <fog attach="fog" args={['#4a7a5a', 25, 70]} />}
-        {currentMap === 'desert' && <fog attach="fog" args={['#d4a853', 40, 90]} />}
+        {currentMap === 'jungle' && <fog attach="fog" args={['#4a7a5a', 20, 65]} />}
+        {currentMap === 'desert' && <fog attach="fog" args={['#d4a853', 35, 85]} />}
         <GameObjects />
       </Canvas>
     </div>
