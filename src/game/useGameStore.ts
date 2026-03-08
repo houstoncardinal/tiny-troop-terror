@@ -144,6 +144,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     const newHealth = Math.max(0, get().health - dmg);
     set({ health: newHealth, armor: newArmor, lastDamageTime: Date.now() });
+    playSound('damage');
     if (newHealth <= 0) get().die();
   },
 
