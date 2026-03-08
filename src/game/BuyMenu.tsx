@@ -35,7 +35,7 @@ export default function BuyMenu() {
               <span className="text-muted-foreground text-xs ml-2">({armor}/100)</span>
             </div>
             <button
-              onClick={() => buyArmor()}
+              onClick={() => { if (buyArmor()) playSound('buy'); }}
               disabled={money < 650 || armor >= 100}
               className="px-3 py-1 bg-primary text-primary-foreground text-xs font-tactical cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
             >
