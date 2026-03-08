@@ -46,8 +46,8 @@ export default function GunModel() {
         <meshStandardMaterial color="#2a2a2a" metalness={0.9} roughness={0.3} />
       </mesh>
       {/* Barrel */}
-      <mesh position={[0, 0.01, -0.25]}>
-        <cylinderGeometry args={[0.015, 0.02, 0.2, 8]} rotation={[Math.PI / 2, 0, 0]} />
+      <mesh position={[0, 0.01, -0.25]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.015, 0.02, 0.2, 8]} />
         <meshStandardMaterial color="#1a1a1a" metalness={0.95} roughness={0.2} />
       </mesh>
       {/* Handle */}

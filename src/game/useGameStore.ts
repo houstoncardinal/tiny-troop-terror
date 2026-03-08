@@ -107,7 +107,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
 
-  removeBullet: (id) => set(s => ({ bullets: s.bullets.filter(b => b.id !== id) })),
   setLocked: (locked) => set({ isLocked: locked }),
   die: () => set({ gameState: 'dead' }),
   nextWave: () => set(s => ({
