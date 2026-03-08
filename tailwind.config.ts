@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        military: ['"Press Start 2P"', 'monospace'],
+        tactical: ['"Rajdhani"', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -46,6 +50,13 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        hud: {
+          bg: "hsl(var(--hud-bg))",
+          text: "hsl(var(--hud-text))",
+          health: "hsl(var(--hud-health))",
+          ammo: "hsl(var(--hud-ammo))",
+          danger: "hsl(var(--hud-danger))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
