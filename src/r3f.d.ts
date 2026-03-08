@@ -1,7 +1,10 @@
-import '@react-three/fiber';
+import { ThreeElements } from '@react-three/fiber';
 
 declare global {
   namespace JSX {
-    interface IntrinsicElements extends import('@react-three/fiber').ThreeElements {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-interface
+    interface IntrinsicElements extends ThreeElements {}
   }
 }
+
+export {};
