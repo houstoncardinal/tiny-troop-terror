@@ -352,7 +352,7 @@ export default function DesertMap() {
       ))}
 
       {/* Atmospheric particles - floating dust */}
-      <AtmosphericParticles count={150} color="#d4a85380" speed={0.5} />
+      <AtmosphericParticles count={150} color="#d4a853" speed={0.5} />
 
       {/* Gradient sky */}
       <GradientSky />

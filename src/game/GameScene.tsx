@@ -67,6 +67,7 @@ export default function GameScene() {
         {currentMap === 'arctic' && <fog attach="fog" args={['#c8d0d8', 30, 80]} />}
         {currentMap === 'jungle' && <fog attach="fog" args={['#4a7a5a', 20, 65]} />}
         {currentMap === 'desert' && <fog attach="fog" args={['#d4a853', 35, 85]} />}
+
         <GameObjects />
       </Canvas>
     </div>
