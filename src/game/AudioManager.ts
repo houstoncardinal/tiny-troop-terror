@@ -296,6 +296,21 @@ export function playSound(type: SoundType) {
         osc.start(now); osc.stop(now + 0.15);
         break;
       }
+      case 'killstreak': {
+        // Dramatic ascending fanfare
+        const notes = [440, 554, 659, 880];
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + i * 0.08);
+          gain.gain.setValueAtTime(0.06, now + i * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.3);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(now + i * 0.08); osc.stop(now + i * 0.08 + 0.3);
+        });
+        break;
+      }
     }
   } catch (e) {
     // Audio not available
