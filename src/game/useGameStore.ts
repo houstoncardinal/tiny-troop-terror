@@ -167,7 +167,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const newBullets: Bullet[] = [];
     for (let i = 0; i < weapon.pellets; i++) {
       const id = `bullet-${bulletId++}`;
-      const spread = weapon.spread * (get().isCrouching ? 0.5 : 1);
+      const spread = weapon.spread * (get().isCrouching ? 0.5 : 1) * (get().isADS ? 0.3 : 1);
       const dir: [number, number, number] = [
         direction[0] + (Math.random() - 0.5) * spread * 2,
         direction[1] + (Math.random() - 0.5) * spread * 2,
