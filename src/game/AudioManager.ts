@@ -20,7 +20,7 @@ function noise(ctx: AudioContext, duration: number, volume = 0.3): AudioBufferSo
 type SoundType = 
   'pistol' | 'rifle' | 'shotgun' | 'sniper' | 'grenade_throw' | 'explosion' |
   'reload' | 'empty' | 'weapon_switch' | 'ui_click' | 'footstep' | 'jump' | 'land' |
-  'hit' | 'kill' | 'headshot' | 'buy' | 'damage' | 'combo';
+  'hit' | 'kill' | 'headshot' | 'buy' | 'damage' | 'combo' | 'killstreak';
 
 export function playSound(type: SoundType) {
   try {
