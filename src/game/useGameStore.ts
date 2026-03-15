@@ -124,6 +124,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   comboTimer: 0,
   lastDamageTime: 0,
   headshotCount: 0,
+  isADS: false,
+  killStreak: 0,
 
   startGame: (map) => set({
     health: 100, armor: 0, score: 0, money: 800, wave: 1, enemies: [], bullets: [],
