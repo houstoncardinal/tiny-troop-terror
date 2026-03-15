@@ -241,6 +241,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       combo: s.combo + 1,
       comboTimer: 3,
       headshotCount: headshot ? s.headshotCount + 1 : s.headshotCount,
+      killStreak: s.killStreak + 1,
     }));
   },
 
