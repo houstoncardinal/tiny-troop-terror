@@ -59,6 +59,8 @@ interface GameState {
   comboTimer: number;
   lastDamageTime: number;
   headshotCount: number;
+  isADS: boolean;
+  killStreak: number;
 
   startGame: (map?: MapType) => void;
   takeDamage: (amount: number) => void;
@@ -87,6 +89,7 @@ interface GameState {
   startReload: () => void;
   finishReload: () => void;
   updateCombo: (delta: number) => void;
+  setADS: (ads: boolean) => void;
 }
 
 let bulletId = 0;
@@ -121,6 +124,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   comboTimer: 0,
   lastDamageTime: 0,
   headshotCount: 0,
+  isADS: false,
+  killStreak: 0,
 
   startGame: (map) => set({
     health: 100, armor: 0, score: 0, money: 800, wave: 1, enemies: [], bullets: [],
@@ -130,7 +135,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     currentWeaponId: 'pistol',
     ownedWeapons: [{ id: 'pistol', currentAmmo: 12, reserveAmmo: 120 }],
     isReloading: false, shopOpen: false, waveKills: 0, combo: 0, comboTimer: 0,
-    headshotCount: 0,
+    headshotCount: 0, isADS: false, killStreak: 0,
   }),
 
   takeDamage: (amount) => {
@@ -162,7 +167,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const newBullets: Bullet[] = [];
     for (let i = 0; i < weapon.pellets; i++) {
       const id = `bullet-${bulletId++}`;
-      const spread = weapon.spread * (get().isCrouching ? 0.5 : 1);
+      const spread = weapon.spread * (get().isCrouching ? 0.5 : 1) * (get().isADS ? 0.3 : 1);
       const dir: [number, number, number] = [
         direction[0] + (Math.random() - 0.5) * spread * 2,
         direction[1] + (Math.random() - 0.5) * spread * 2,
@@ -236,6 +241,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       combo: s.combo + 1,
       comboTimer: 3,
       headshotCount: headshot ? s.headshotCount + 1 : s.headshotCount,
+      killStreak: s.killStreak + 1,
     }));
   },
 
@@ -263,7 +269,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   setLocked: (locked) => set({ isLocked: locked }),
-  die: () => set({ gameState: 'dead' }),
+  die: () => set({ gameState: 'dead', killStreak: 0 }),
 
   nextWave: () => {
     const waveBonus = get().wave * 200 + get().waveKills * 25;
@@ -346,10 +352,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (combo > 0 && comboTimer > 0) {
       const newTimer = comboTimer - delta;
       if (newTimer <= 0) {
-        set({ combo: 0, comboTimer: 0 });
+      set({ combo: 0, comboTimer: 0 });
       } else {
         set({ comboTimer: newTimer });
       }
     }
   },
+  setADS: (ads) => set({ isADS: ads }),
 }));

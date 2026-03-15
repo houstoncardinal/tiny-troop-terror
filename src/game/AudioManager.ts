@@ -20,7 +20,7 @@ function noise(ctx: AudioContext, duration: number, volume = 0.3): AudioBufferSo
 type SoundType = 
   'pistol' | 'rifle' | 'shotgun' | 'sniper' | 'grenade_throw' | 'explosion' |
   'reload' | 'empty' | 'weapon_switch' | 'ui_click' | 'footstep' | 'jump' | 'land' |
-  'hit' | 'kill' | 'headshot' | 'buy' | 'damage' | 'combo';
+  'hit' | 'kill' | 'headshot' | 'buy' | 'damage' | 'combo' | 'killstreak';
 
 export function playSound(type: SoundType) {
   try {
@@ -294,6 +294,21 @@ export function playSound(type: SoundType) {
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
         osc.connect(gain).connect(ctx.destination);
         osc.start(now); osc.stop(now + 0.15);
+        break;
+      }
+      case 'killstreak': {
+        // Dramatic ascending fanfare
+        const notes = [440, 554, 659, 880];
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + i * 0.08);
+          gain.gain.setValueAtTime(0.06, now + i * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.3);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(now + i * 0.08); osc.stop(now + i * 0.08 + 0.3);
+        });
         break;
       }
     }

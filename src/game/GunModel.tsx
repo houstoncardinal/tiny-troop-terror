@@ -112,10 +112,11 @@ function WeaponMesh({ weaponId }: { weaponId: string }) {
 export default function GunModel() {
   const { camera } = useThree();
   const groupRef = useRef<THREE.Group>(null);
-  const { gameState, currentWeaponId, isReloading } = useGameStore();
+  const { gameState, currentWeaponId, isReloading, isADS } = useGameStore();
   const owned = useGameStore(s => s.ownedWeapons.find(w => w.id === s.currentWeaponId));
   const [recoil, setRecoil] = useState(0);
   const reloadAnim = useRef(0);
+  const adsLerp = useRef(0);
 
   useEffect(() => {
     const onClick = () => {
@@ -130,14 +131,22 @@ export default function GunModel() {
   useFrame((_, delta) => {
     if (!groupRef.current) return;
 
-    const offset = new THREE.Vector3(0.3, -0.25, -0.5);
+    // ADS interpolation
+    const adsTarget = isADS ? 1 : 0;
+    adsLerp.current += (adsTarget - adsLerp.current) * 0.15;
+
+    // Normal offset: right side. ADS offset: centered
+    const normalOffset = new THREE.Vector3(0.3, -0.25, -0.5);
+    const adsOffset = new THREE.Vector3(0, -0.15, -0.35);
+    const offset = normalOffset.lerp(adsOffset, adsLerp.current);
     offset.applyQuaternion(camera.quaternion);
     groupRef.current.position.copy(camera.position).add(offset);
     groupRef.current.quaternion.copy(camera.quaternion);
 
     if (recoil > 0) {
       setRecoil(Math.max(0, recoil - delta * 8));
-      const kickOffset = new THREE.Vector3(0, 0.02 * recoil, 0.05 * recoil);
+      const kickBack = isADS ? 0.3 : 1; // Less recoil visual when ADS
+      const kickOffset = new THREE.Vector3(0, 0.02 * recoil * kickBack, 0.05 * recoil * kickBack);
       kickOffset.applyQuaternion(camera.quaternion);
       groupRef.current.position.add(kickOffset);
     }
