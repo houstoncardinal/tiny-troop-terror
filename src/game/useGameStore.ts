@@ -269,7 +269,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   setLocked: (locked) => set({ isLocked: locked }),
-  die: () => set({ gameState: 'dead' }),
+  die: () => set({ gameState: 'dead', killStreak: 0 }),
 
   nextWave: () => {
     const waveBonus = get().wave * 200 + get().waveKills * 25;
