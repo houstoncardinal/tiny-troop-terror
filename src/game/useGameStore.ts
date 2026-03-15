@@ -89,6 +89,7 @@ interface GameState {
   startReload: () => void;
   finishReload: () => void;
   updateCombo: (delta: number) => void;
+  setADS: (ads: boolean) => void;
 }
 
 let bulletId = 0;
