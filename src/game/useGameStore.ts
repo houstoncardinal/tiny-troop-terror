@@ -59,6 +59,8 @@ interface GameState {
   comboTimer: number;
   lastDamageTime: number;
   headshotCount: number;
+  isADS: boolean;
+  killStreak: number;
 
   startGame: (map?: MapType) => void;
   takeDamage: (amount: number) => void;
