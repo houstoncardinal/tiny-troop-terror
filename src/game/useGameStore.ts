@@ -352,10 +352,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (combo > 0 && comboTimer > 0) {
       const newTimer = comboTimer - delta;
       if (newTimer <= 0) {
-        set({ combo: 0, comboTimer: 0 });
+      set({ combo: 0, comboTimer: 0 });
       } else {
         set({ comboTimer: newTimer });
       }
     }
   },
+  setADS: (ads) => set({ isADS: ads }),
 }));
