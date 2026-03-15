@@ -14,6 +14,9 @@ const JUMP_FORCE = 10;
 const STAND_HEIGHT = 1.7;
 const CROUCH_HEIGHT = 1.0;
 const GROUND_Y = 0;
+const DEFAULT_FOV = 75;
+const ADS_FOV = 40;
+const SPRINT_FOV = 85;
 
 export default function Player() {
   const { camera } = useThree();
@@ -26,8 +29,10 @@ export default function Player() {
   const currentHeight = useRef(STAND_HEIGHT);
   const headBob = useRef(0);
   const mouseDown = useRef(false);
+  const rightMouseDown = useRef(false);
   const initialized = useRef(false);
   const footstepTimer = useRef(0);
+  const currentFOV = useRef(DEFAULT_FOV);
 
   // Initialize camera position only once
   useEffect(() => {
@@ -90,18 +95,33 @@ export default function Player() {
       keys.current[e.code] = false;
       if (e.code === 'KeyC' || e.code === 'ControlLeft') storeRef.current.setCrouching(false);
     };
-    const onMouseDown = () => { mouseDown.current = true; };
-    const onMouseUp = () => { mouseDown.current = false; };
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button === 0) mouseDown.current = true;
+      if (e.button === 2) {
+        rightMouseDown.current = true;
+        useGameStore.getState().setADS(true);
+      }
+    };
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button === 0) mouseDown.current = false;
+      if (e.button === 2) {
+        rightMouseDown.current = false;
+        useGameStore.getState().setADS(false);
+      }
+    };
+    const onContextMenu = (e: Event) => e.preventDefault();
 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('contextmenu', onContextMenu);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('contextmenu', onContextMenu);
     };
   }, []);
 
@@ -150,8 +170,17 @@ export default function Player() {
       fireWeapon();
     }
 
+    // FOV interpolation (ADS / Sprint / Normal)
+    const isSprinting = keys.current['ShiftLeft'] && !s.isADS;
+    const targetFOV = s.isADS ? (weapon.type === 'sniper' ? 20 : ADS_FOV) : isSprinting ? SPRINT_FOV : DEFAULT_FOV;
+    currentFOV.current += (targetFOV - currentFOV.current) * 0.12;
+    (camera as THREE.PerspectiveCamera).fov = currentFOV.current;
+    (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
+
     const k = keys.current;
-    const sprint = k['ShiftLeft'] ? SPRINT_SPEED : s.isCrouching ? CROUCH_SPEED : SPEED;
+    const sprint = isSprinting ? SPRINT_SPEED : s.isCrouching ? CROUCH_SPEED : SPEED;
+    // Slower movement when ADS
+    const moveSpeed = s.isADS ? sprint * 0.6 : sprint;
     const direction = new THREE.Vector3();
 
     const forward = new THREE.Vector3();
@@ -170,14 +199,14 @@ export default function Player() {
     const isMoving = direction.length() > 0;
     if (isMoving) {
       direction.normalize();
-      velocity.current.lerp(direction.multiplyScalar(sprint), 0.15);
+      velocity.current.lerp(direction.multiplyScalar(moveSpeed), 0.15);
     } else {
       velocity.current.lerp(new THREE.Vector3(), 0.2);
     }
 
     // Footstep sounds
     if (isMoving && isGrounded.current) {
-      footstepTimer.current += delta * (k['ShiftLeft'] ? 1.8 : 1);
+      footstepTimer.current += delta * (isSprinting ? 1.8 : 1);
       if (footstepTimer.current > 0.4) {
         footstepTimer.current = 0;
         playSound('footstep');
@@ -201,8 +230,8 @@ export default function Player() {
     }
 
     if (isMoving && isGrounded.current) {
-      headBob.current += delta * (k['ShiftLeft'] ? 14 : 10);
-      newPos.y += Math.sin(headBob.current) * 0.04;
+      headBob.current += delta * (isSprinting ? 14 : 10);
+      newPos.y += Math.sin(headBob.current) * (s.isADS ? 0.01 : 0.04);
     }
 
     newPos.x = Math.max(-48, Math.min(48, newPos.x));
