@@ -135,7 +135,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     currentWeaponId: 'pistol',
     ownedWeapons: [{ id: 'pistol', currentAmmo: 12, reserveAmmo: 120 }],
     isReloading: false, shopOpen: false, waveKills: 0, combo: 0, comboTimer: 0,
-    headshotCount: 0,
+    headshotCount: 0, isADS: false, killStreak: 0,
   }),
 
   takeDamage: (amount) => {
